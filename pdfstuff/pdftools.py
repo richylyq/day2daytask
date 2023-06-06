@@ -20,26 +20,26 @@ def combinepdf(folderpath):
         folderpath (path): Folder path for the PDFs you wish to combine
     """
     pdfs = [a for a in os.listdir(folderpath) if a.endswith(".pdf")]
-    
+
     merger = PdfMerger()
 
     for pdf in pdfs:
-        merger.append(f'{folderpath}/{pdf}')
+        merger.append(f"{folderpath}/{pdf}")
 
-    merger.write(f'{folderpath}/output.pdf')
+    merger.write(f"{folderpath}/output.pdf")
     merger.close()
     print("PDF Combined.. Please check.")
 
+
 # Compile all the functions for PDF Tools
-func_dict = {'combinepdf': combinepdf}
+func_dict = {"combinepdf": combinepdf}
 
 if __name__ == "__main__":
-    
     parser = argparse.ArgumentParser()
     parser.add_argument("functions")
     parser.add_argument("folderpath")
     args = parser.parse_args()
-    
+
     chosen_function = args.functions
     target_dir = Path(args.folderpath)
 
