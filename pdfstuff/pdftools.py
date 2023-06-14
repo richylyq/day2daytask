@@ -61,8 +61,32 @@ def pdftodocx(pdftoconvert, savelocation):
     print("PDF Converted! Please check your .docx")
 
 
+def rotatepdf(input_path, output_path, degrees):
+    """
+    Rotates PDF based on given degree
+
+    Args:
+        input_path (PDF): original PDF
+        output_path (PDF): rotated PDF
+        degrees (int): amount of degree you wish to rotate your pdf to
+    """
+    with open(input_path, "rb") as file:
+        pdf_reader = PyPDF2.PdfReader(file)
+        pdf_writer = PyPDF2.PdfWriter()
+
+        for page_num in range(len(pdf_reader.pages)):
+            page = pdf_reader.pages[page_num]
+            page.rotate(degrees)
+            pdf_writer.add_page(page)
+
+        with open(output_path, "wb") as output_file:
+            pdf_writer.write(output_file)
+
+        print("PDF rotation completed!")
+
+
 # Compile all the functions for PDF Tools
-func_dict = {"combinepdf": combinepdf, "pdftodocx": pdftodocx}
+func_dict = {"combinepdf": combinepdf, "pdftodocx": pdftodocx, "rotatepdf": rotatepdf}
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -81,11 +105,11 @@ if __name__ == "__main__":
         dest="folderpath",
     )
     parser.add_argument(
-        "-cv",
-        "--convert2pdf",
+        "-ifp",
+        "--inputfilepath",
         help="filepath for PDF to be converted",
         required=False,
-        dest="convert2pdf",
+        dest="inputfilepath",
     )
     parser.add_argument(
         "-sp",
@@ -93,6 +117,13 @@ if __name__ == "__main__":
         help="Save Folder Path for PDF Tools functions",
         required=False,
         dest="savepath",
+    )
+    parser.add_argument(
+        "-d",
+        "--degrees",
+        help="Rotational Degree for PDF Rotate function",
+        required=False,
+        dest="degrees",
     )
 
     args = parser.parse_args()
@@ -105,10 +136,19 @@ if __name__ == "__main__":
             raise SystemExit(1)
         func_dict[args.functions](target_dir)
     elif func_dict[args.functions] == pdftodocx:
-        convert2pdf = Path(args.convert2pdf)
-        filename = os.path.splitext(args.convert2pdf.split("\\")[-1])[0]
+        inputfilepath = Path(args.inputfilepath)
+        filename = os.path.splitext(args.inputfilepath.split("\\")[-1])[0]
         savepath = Path(args.savepath + f"/{filename}.docx")
-        if not convert2pdf.exists():
+        if not inputfilepath.exists():
             print("The target directory doesn't exist")
             raise SystemExit(1)
-        func_dict[args.functions](convert2pdf, savepath)
+        func_dict[args.functions](inputfilepath, savepath)
+    elif func_dict[args.functions] == rotatepdf:
+        inputfilepath = Path(args.inputfilepath)
+        filename = os.path.splitext(args.inputfilepath.split("\\")[-1])[0]
+        savepath = Path(args.savepath + f"/{filename}.pdf")
+        degrees = args.degrees
+        if not inputfilepath.exists():
+            print("The target directory doesn't exist")
+            raise SystemExit(1)
+        func_dict[args.functions](inputfilepath, savepath, int(degrees))
