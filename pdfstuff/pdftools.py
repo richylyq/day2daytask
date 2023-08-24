@@ -13,6 +13,7 @@ from pathlib import Path
 import PyPDF2
 from docx import Document
 from pypdf import PdfMerger
+import fitz
 
 
 def combinepdf(folderpath):
@@ -85,8 +86,50 @@ def rotatepdf(input_path, output_path, degrees):
         print("PDF rotation completed!")
 
 
+def pagereplace(input_pdf_path, replacement_pdf_path, output_pdf_path, page_number):
+    """
+    Page replace for PDF documents based on
+    specified replacement PDF into original PDF
+
+    Args:
+        input_pdf_path (PDF): Original PDF
+        replacement_pdf_path (PDF): PDF containing the page to be replaced
+        output_pdf_path (PDF): save location for final PDF
+        page_number (int): page number to be replaced
+    """
+    input_pdf = fitz.open(input_pdf_path)
+    replacement_pdf = fitz.open(replacement_pdf_path)
+
+    if int(page_number) < 1 or int(page_number) > len(input_pdf):
+        print("Invalid page number.")
+        input_pdf.close()
+        replacement_pdf.close()
+        return
+    # Copy all pages from the original PDF to a new PDF, except the page to be replaced
+    output_pdf = fitz.open()
+    for i in range(len(input_pdf)):
+        if i == int(page_number) - 1:
+            output_pdf.insert_pdf(
+                replacement_pdf, from_page=0, to_page=0, start_at=int(page_number) - 1
+            )
+        else:
+            output_pdf.insert_pdf(input_pdf, from_page=i, to_page=i)
+
+    # Save the modified PDF
+    output_pdf.save(output_pdf_path)
+    output_pdf.close()
+
+    input_pdf.close()
+    replacement_pdf.close()
+
+
 # Compile all the functions for PDF Tools
-func_dict = {"combinepdf": combinepdf, "pdftodocx": pdftodocx, "rotatepdf": rotatepdf}
+func_dict = {
+    "combinepdf": combinepdf,
+    "pdftodocx": pdftodocx,
+    "rotatepdf": rotatepdf,
+    "pagereplace": pagereplace,
+}
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -125,6 +168,20 @@ if __name__ == "__main__":
         required=False,
         dest="degrees",
     )
+    parser.add_argument(
+        "-r",
+        "--replacepdf",
+        help="PDF to declare for replacement",
+        required=False,
+        dest="replacepdf",
+    )
+    parser.add_argument(
+        "-p",
+        "--pages",
+        help="page number to declare for replacement",
+        required=False,
+        dest="pagereplace",
+    )
 
     args = parser.parse_args()
     chosen_function = args.functions
@@ -152,3 +209,10 @@ if __name__ == "__main__":
             print("The target directory doesn't exist")
             raise SystemExit(1)
         func_dict[args.functions](inputfilepath, savepath, int(degrees))
+    elif func_dict[args.functions] == pagereplace:
+        inputfilepath = Path(args.inputfilepath)
+        filename = os.path.splitext(args.inputfilepath.split("\\")[-1])[0]
+        savepath = Path(args.savepath + f"/{filename}_new.pdf")
+        replacepdf = Path(args.replacepdf)
+        replacepages = args.pagereplace
+        func_dict[args.functions](inputfilepath, replacepdf, savepath, replacepages)
